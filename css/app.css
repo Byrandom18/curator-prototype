@@ -1,0 +1,189 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #1d2430;
+  background: #eef3f8;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+h1, h2, h3 { margin: 0 0 8px; }
+p { margin: 0 0 8px; }
+
+.demo {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: #1c2430;
+  color: #fff;
+}
+.demo .seg { display: flex; background: #2c3644; border-radius: 8px; padding: 2px; }
+.demo .seg button, .btn-reset {
+  border: 0;
+  background: transparent;
+  color: #d5dbe3;
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+.demo .seg button.active { background: #fff; color: #1c2430; }
+.demo select { border: 0; border-radius: 6px; padding: 4px 6px; }
+.demo .hint { color: #c5ced8; font-size: 13px; }
+.demo .spacer, .phead .spacer { flex: 1; }
+.btn-reset { border: 1px solid #8d97a6 !important; }
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: #146c36;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 50;
+}
+.toast[hidden] { display: none; }
+
+.partner, .tlayout { min-height: calc(100vh - 52px); }
+.phead {
+  height: 58px;
+  background: #0e4d66;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+.logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: #0e4d66;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.org { font-size: 14px; }
+.userchip { background: rgba(255,255,255,.14); border-radius: 999px; padding: 6px 10px; font-size: 14px; }
+.bell { position: relative; border: 0; background: transparent; color: #fff; font-size: 18px; }
+.bell span {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #e4572e;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 0 5px;
+}
+
+.playout { display: grid; grid-template-columns: 240px 1fr 220px; min-height: calc(100vh - 110px); }
+.playout.no-rail { grid-template-columns: 240px 1fr; }
+.pside, .prail { background: #fff; padding: 12px; }
+.pside { border-right: 1px solid #e4ebf3; }
+.prail { border-left: 1px solid #e4ebf3; }
+.pmain, .tmain { padding: 18px 20px 48px; }
+.nav-item, .sub-item, .tside button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #243140;
+}
+.sub-item, .tside .sub { padding-left: 22px; color: #526070; }
+.nav-item.active, .sub-item.active, .tside button.active { background: #e8f3ff; color: #1558d6; }
+.nav-label { color: #7b8796; font-size: 12px; padding: 12px 10px 4px; }
+
+.page-head, .tbar { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.muted, .note { color: #6b7686; font-size: 13px; }
+.card, .stat {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat b { display: block; font-size: 28px; }
+.project-row, .person, .task, .draft-task, .row-actions, .inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.project-row, .task { padding: 10px 0; border-top: 1px solid #eef2f6; }
+.app-title {
+  border: 0;
+  background: transparent;
+  color: #1558d6;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 6px 0;
+  text-align: left;
+}
+.badge {
+  border-radius: 999px;
+  background: #e7f7ee;
+  color: #1b7a3d;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+.badge.wait { background: #fff4d6; color: #8a5a00; }
+.badge.draft { background: #eef1f6; color: #526070; }
+.btn, .btn.primary, .btn.tiny, .btn.danger {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #e8eef8;
+  color: #1d3f86;
+}
+.btn.primary, .btn.tiny.primary { background: #2f6fed; color: #fff; }
+.btn.tiny { padding: 4px 8px; font-size: 13px; }
+.btn.danger { background: #fde8e4; color: #a33b24; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 14px; flex: 1; }
+.field input, .field select, .draft-task input, .task input, .inline input, .search, .tbar select {
+  border: 1px solid #d5dde8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  width: 100%;
+}
+.search { margin: 8px 0; }
+.grid-2 { display: grid; grid-template-columns: 1.4fr .8fr; gap: 12px; }
+.steps { list-style: none; padding: 0; margin: 0 0 8px; }
+.steps li { display: flex; gap: 8px; align-items: center; padding: 6px 0; color: #6b7686; }
+.steps .num { width: 22px; height: 22px; border-radius: 50%; background: #eef1f6; display: grid; place-items: center; font-size: 12px; }
+.steps .on { color: #1558d6; font-weight: 700; }
+.steps .on .num { background: #2f6fed; color: #fff; }
+.filter-line { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #c5ced8; display: inline-block; }
+.dot.orange { background: #f0a202; }
+.dot.green { background: #3aaa5a; }
+.stub { background: #fff; border-radius: 12px; padding: 20px; }
+
+.tlayout { display: flex; }
+.tside { width: 230px; background: #2c333a; color: #d7dde4; padding: 12px 0; flex: none; }
+.tside button { color: inherit; border-radius: 0; }
+.tside button.active { background: #3d4650; color: #fff; }
+.tmain { flex: 1; }
+.cards-3 { display: grid; grid-template-columns: 1.1fr 1fr .9fr; gap: 12px; }
+.bar { height: 8px; background: #e8eef5; border-radius: 99px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: #2f6fed; }
+.task.done b { color: #1b7a3d; }
+.banner { background: #fff7e8; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.draft-task { margin-bottom: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { text-align: left; padding: 4px 0; border-bottom: 1px solid #eef2f6; }
+
+@media (max-width: 760px) {
+  .playout, .playout.no-rail, .stats, .grid-2, .cards-3 { grid-template-columns: 1fr; }
+  .tlayout { flex-direction: column; }
+  .tside { width: auto; }
+}
