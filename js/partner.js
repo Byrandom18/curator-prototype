@@ -48,7 +48,8 @@
 
   function sidebar(state) {
     function item(route, label, sub) {
-      const active = state.ui.route === route ? " active" : "";
+      const onPassport = route === "passports" && (state.ui.route === "passports" || state.ui.route === "passport");
+      const active = state.ui.route === route || onPassport ? " active" : "";
       const cls = sub ? "sub-item" : "nav-item";
       return '<button class="' + cls + active + '" data-go="partner/' + route + '">' + label + "</button>";
     }
@@ -142,6 +143,24 @@
     );
   }
 
+  function passports(state) {
+    const rows = state.projects.map(function (project) {
+      return (
+        '<div class="project-row">' +
+          "<div><button class=\"app-title\" data-go=\"partner/passport/" + project.id + "\">" + esc(project.title) + "</button>" +
+          '<div class="note">№' + esc(project.code) + " · в группе " + enrolled(state, project.id) + " из " + esc(project.studentsNeeded) +
+          " · срок " + formatDate(project.deadline) + "</div></div>" +
+          '<div class="row-actions">' + statusBadge(project.status) +
+          '<button class="btn tiny primary" data-go="partner/passport/' + project.id + '">Открыть</button></div></div>'
+      );
+    }).join("") || '<p class="note">Паспортов пока нет.</p>';
+    return (
+      '<div class="page-head"><div><h1>Паспорта</h1>' +
+      '<div class="muted">Откройте паспорт, чтобы заполнить таблицу, срок и группу.</div></div></div>' +
+      '<section class="card">' + rows + "</section>"
+    );
+  }
+
   function applications(state) {
     return (
       '<div class="page-head"><div><h1>Заявки</h1>' +
@@ -173,7 +192,7 @@
     const list = state.students.filter(function (student) { return student.projectId === project.id; });
     const rows = list.length
       ? list.map(function (student) {
-        return '<div class="person"><div><b>' + esc(student.name) + "</b><div class=\"note\">" + esc(student.role) + "</div></div>" +
+        return '<div class="person"><div><b>' + esc(student.name) + "</b><div class=\"note\">" + esc(student.group || "группа не указана") + " · " + esc(student.role || "роль не выбрана") + "</div></div>" +
           (state.ui.role === "curator" ? '<button class="btn tiny danger" data-action="remove-student" data-id="' + student.id + '">Убрать</button>' : "") +
           "</div>";
       }).join("")
@@ -181,7 +200,9 @@
     const form = state.ui.role === "curator"
       ? '<form id="add-student" class="inline">' +
           '<label class="field">Имя<input name="name" required></label>' +
-          '<label class="field">Роль<select name="role"><option>Аналитик</option><option>Разработчик</option><option>Дизайнер</option><option>Тестировщик</option></select></label>' +
+          '<label class="field">Группа<input name="group" placeholder="ФтМ-160701"></label>' +
+          '<label class="field">Роль в команде<select name="teamRole">' + window.Store.TEAM_ROLES.map(function (role) { return "<option>" + esc(role) + "</option>"; }).join("") + "</select></label>" +
+          '<label class="field">Компетентностная роль<select name="role">' + window.Store.COMPETENCIES.map(function (role) { return "<option>" + esc(role) + "</option>"; }).join("") + "</select></label>" +
           '<button class="btn primary" type="submit">В группу</button></form>'
       : "";
     return "<h3>Группа " + list.length + " из " + esc(project.studentsNeeded) + "</h3>" + rows + form;
@@ -234,10 +255,13 @@
     let body = home(state);
     let rail = "";
     let layout = "playout no-rail";
-    if (state.ui.route === "applications" || state.ui.route === "passports") {
+    if (state.ui.route === "applications") {
       body = applications(state);
       rail = filters(state);
       layout = "playout";
+    } else if (state.ui.route === "passports") {
+      body = passports(state);
+      layout = "playout no-rail";
     } else if (state.ui.route === "passport") {
       body = passport(state);
       layout = "playout no-rail";

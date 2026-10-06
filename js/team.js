@@ -15,21 +15,34 @@
   }
 
   function sidebar(state) {
-    function item(label, go, active, sub) {
-      return '<button class="' + (sub ? "sub " : "") + (active ? "active" : "") + '" data-go="' + go + '">' + label + "</button>";
+    const id = state.ui.projectId || "";
+    function item(label, route, sub) {
+      const active = state.ui.route === route ? " active" : "";
+      return '<button class="' + (sub ? "sub" : "") + active + '" data-go="team/' + route + "/" + id + '">' + label + "</button>";
     }
     return (
       '<aside class="tside">' +
-        item("О проекте", "team/project/" + (state.ui.projectId || ""), state.ui.route === "project", false) +
-        item("Задачи", "team/project/" + (state.ui.projectId || ""), false, false) +
-        '<button data-action="stub" data-title="Команда">Команда</button>' +
+        item("О проекте", "project") +
+        item("Задачи", "tasks") +
+        item("Команда", "members") +
         '<button data-action="stub" data-title="Лента событий">Лента событий</button>' +
         '<button data-action="stub" data-title="Документы">Документы</button>' +
         '<button data-action="stub" data-title="Обсуждение">Обсуждение</button>' +
-        item("Результаты и оценки", "team/project/" + (state.ui.projectId || ""), false, false) +
-        '<button class="sub" data-action="focus-grades">Оценка по итерациям</button>' +
+        item("Результаты и оценки", "grades") +
+        item("Оценка по итерациям", "grades", true) +
       "</aside>"
     );
+  }
+
+  function options(list, current) {
+    return list.map(function (value) {
+      return '<option' + (value === current ? " selected" : "") + ">" + esc(value) + "</option>";
+    }).join("");
+  }
+
+  function initials(name) {
+    const parts = String(name || "").split(" ").filter(Boolean);
+    return ((parts[0] || "").charAt(0) + (parts[1] || "").charAt(0)).toUpperCase();
   }
 
   function draftPanel(state) {
@@ -99,8 +112,7 @@
       return '<div class="person"><div><b>' + esc(student.name) + '</b><div class="note">' + esc(student.role) + "</div></div></div>";
     }).join("") || '<p class="note">Группа пустая. Соберите её в паспорте.</p>';
     const docs = iterations.map(function (iteration) {
-      const ready = iteration.tasks.filter(function (task) { return task.done; }).length;
-      return "<tr><td>" + esc(iteration.title) + "</td><td>" + iteration.tasks.length + "</td><td>" + ready + "</td></tr>";
+      return "<tr><td>" + esc(iteration.title) + "</td><td>" + iteration.tasks.length + "</td><td>" + (iteration.published ? "Да" : "Нет") + "</td></tr>";
     }).join("") || "<tr><td colspan=\"3\">Итераций пока нет</td></tr>";
     const blocks = iterations.map(function (iteration) {
       const waiting = iteration.tasks.filter(function (task) { return !task.done; }).length;
@@ -133,11 +145,105 @@
         '<div class="cards-3">' +
           '<section class="card"><h2>Команда</h2><p class="note">Куратор проекта</p><p><b>Анна Смирнова</b></p><p class="note">Заказчик</p><p>' + esc(current.customer) + '</p><h3>Участники: ' + people.length + "</h3>" + team + "</section>" +
           '<section class="card"><h2>Прогресс проекта</h2><p>' + done + " из " + tasks.length + " задач сдано</p><div class=\"bar\"><span style=\"width:" + percent + '%\"></span></div><p class="note">Срок ' + formatDate(current.deadline) + "</p></section>" +
-          '<section class="card"><h2>Итерации</h2><table><tr><th>Итерация</th><th>Всего</th><th>Сдано</th></tr>' + docs + "</table></section>" +
+          '<section class="card"><h2>Документы</h2><table><tr><th>Итерация</th><th>Всего</th><th>Опубликовано заказчику</th></tr>' + docs + "</table></section>" +
         "</div>" +
         tools + draftPanel(state) + blocks +
-      "</div>"
+        '<section class="card about"><h2>О проекте «' + esc(current.title) + "»</h2><table>" +
+          row("Краткое название", current.title) +
+          row("Уровень сложности", current.complexity) +
+          row("Тип проводимых работ", current.type) +
+          row("Цель", current.goal) +
+          row("Требуемый результат", current.result) +
+          row("Критерии оценки", current.criteria) +
+          row("Организация заказчика", current.partner) +
+          row("ФИО заказчика", current.customer) +
+          row("Образовательная программа", current.program) +
+          row("Период выполнения", current.period || "Осенний семестр 2026/2027 учебного года") +
+        "</table></section></div>"
     );
+  }
+
+  function row(label, value) {
+    return "<tr><th>" + esc(label) + "</th><td>" + esc(value || "—") + "</td></tr>";
+  }
+
+  function members(state) {
+    const current = projectOf(state);
+    const people = studentsOf(state, current.id);
+    const curator = state.ui.role === "curator";
+    const colors = ["#2f80ed", "#e25b5b", "#7b61ff", "#1aa6a6"];
+    const rows = people.map(function (student, index) {
+      const roleSelect = curator
+        ? '<select data-action="set-team-role" data-id="' + student.id + '">' + options(window.Store.TEAM_ROLES, student.teamRole || "Не выбрано") + "</select>"
+        : esc(student.teamRole || "—");
+      const skillSelect = curator
+        ? '<select data-action="set-competency" data-id="' + student.id + '">' + options(window.Store.COMPETENCIES, student.role || "Не выбрано") + "</select>"
+        : esc(student.role || "—");
+      const group = curator
+        ? '<input data-action="set-group" data-id="' + student.id + '" value="' + esc(student.group || "") + '">'
+        : esc(student.group || "—");
+      return "<tr><td><span class=\"avatar\" style=\"background:" + colors[index % colors.length] + "\">" + esc(initials(student.name)) + "</span>" + esc(student.name) + "</td><td>" + group + "</td><td>" + roleSelect + "</td><td>" + skillSelect + "</td></tr>";
+    }).join("");
+    return (
+      frame(state) +
+      '<div class="tcontent"><section class="card"><h2>Команда проекта</h2>' +
+      '<table class="team-table"><tr><th>Имя</th><th>Группа</th><th>Роль в команде</th><th>Компетентностная роль</th></tr>' +
+      rows + "</table>" +
+      (curator ? '<p class="note">Роль задаёт, какие задачи подставятся в итерацию.</p><p><button class="btn" data-go="team/tasks/' + current.id + '">Дальше: задачи</button></p>' : "") +
+      "</section></div>"
+    );
+  }
+
+  function frame(state) {
+    const current = projectOf(state);
+    const optionsHtml = state.projects.map(function (item) {
+      return '<option value="' + item.id + '"' + (item.id === current.id ? " selected" : "") + ">" + esc(item.title) + "</option>";
+    }).join("");
+    const switcher = state.ui.role === "curator" ? '<select data-action="switch-project">' + optionsHtml + "</select>" : "";
+    return '<div class="tbar"><div>Список проектов / ' + esc(current.code) + " " + esc(current.title) + "</div>" + switcher + "</div>";
+  }
+
+  function tasksPage(state) {
+    const current = projectOf(state);
+    const people = studentsOf(state, current.id);
+    const iterations = iterationsOf(state, current.id);
+    const curator = state.ui.role === "curator";
+    const notes = state.notifications.filter(function (note) { return note.studentId === state.ui.studentId && !note.read; });
+    const banner = state.ui.role === "student" && notes.length
+      ? '<div class="banner"><b>Напоминание</b><p>' + esc(notes[0].text) + '</p><button class="btn tiny" data-action="read-notes">Понятно</button></div>'
+      : "";
+    const studentOptions = people.map(function (student) {
+      return '<option value="' + student.id + '">' + esc(student.name) + " · " + esc(student.role || "роль не выбрана") + "</option>";
+    }).join("");
+    const iterationOptions = iterations.map(function (iteration) {
+      return '<option value="' + iteration.id + '">' + esc(iteration.title) + "</option>";
+    }).join("");
+    const forms = curator
+      ? '<section class="card"><h2>1. Итерация</h2><form id="new-iteration" class="inline">' +
+          '<label class="field">Название<input name="title" placeholder="Итерация 2" required></label>' +
+          '<label class="field">Срок<input name="due" type="date" value="' + esc(window.Store.isoPlus(7)) + '"></label>' +
+          '<button class="btn primary" type="submit">Создать итерацию</button></form></section>' +
+        '<section class="card"><h2>2. Задача</h2>' +
+          (iterations.length ? '<form id="add-task" class="inline">' +
+            '<label class="field">Текст<input name="title" placeholder="Что сделать за эту неделю" required></label>' +
+            '<label class="field">Студент<select name="studentId">' + studentOptions + "</select></label>" +
+            '<label class="field">Итерация<select name="iterationId">' + iterationOptions + "</select></label>" +
+            '<button class="btn primary" type="submit">Добавить задачу</button></form>' +
+            '<div class="row-actions"><button class="btn" data-action="fill-roles" data-id="' + iterations[iterations.length - 1].id + '">Подставить задачи по ролям</button>' +
+            '<button class="btn" data-action="publish" data-id="' + iterations[iterations.length - 1].id + '">Опубликовать заказчику</button>' +
+            '<button class="btn" data-action="remind" data-id="' + current.id + '">Напомнить тем, кто не сдал</button></div>'
+          : '<p class="note">Сначала создайте итерацию.</p>') +
+        "</section>"
+      : "";
+    const blocks = iterations.map(function (iteration) {
+      const visible = curator ? iteration.tasks : iteration.tasks.filter(function (task) { return task.studentId === state.ui.studentId; });
+      return '<section class="card"><h2>' + esc(iteration.title) + "</h2><p class=\"note\">Срок " + formatDate(iteration.due) + (iteration.published ? " · опубликовано заказчику" : "") + "</p>" +
+        (visible.length ? visible.map(function (task) { return taskRow(state, task); }).join("") : '<p class="note">Задач пока нет.</p>') +
+        "</section>";
+    }).join("");
+    return frame(state) + '<div class="tcontent">' + banner +
+      '<div class="cycle"><span>1. Роли</span><span>2. Итерация</span><span>3. Задачи</span><span>4. Сдача</span><span>5. Балл</span><span>6. Публикация</span></div>' +
+      forms + blocks + "</div>";
   }
 
   function stub(state) {
@@ -145,7 +251,11 @@
   }
 
   function render(state) {
-    return '<div class="tlayout">' + sidebar(state) + '<div class="tmain">' + (state.ui.route === "stub" ? stub(state) : page(state)) + "</div></div>";
+    let body = page(state);
+    if (state.ui.route === "stub") body = stub(state);
+    else if (state.ui.route === "members") body = members(state);
+    else if (state.ui.route === "tasks" || state.ui.route === "grades") body = tasksPage(state);
+    return '<div class="tlayout">' + sidebar(state) + '<div class="tmain">' + body + "</div></div>";
   }
 
   window.Team = { render: render };

@@ -177,6 +177,11 @@ p { margin: 0 0 8px; }
 .bar { height: 8px; background: #e8eef5; border-radius: 99px; overflow: hidden; }
 .bar span { display: block; height: 100%; background: #2f6fed; }
 .task.done b { color: #1b7a3d; }
+.team-table select, .team-table input { width: 100%; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; color: #fff; font-size: 11px; margin-right: 8px; }
+.about th { width: 280px; color: #6b7686; font-weight: 500; }
+.cycle { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.cycle span { background: #fff; border-radius: 99px; padding: 4px 10px; font-size: 13px; }
 .banner { background: #fff7e8; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .draft-task { margin-bottom: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }

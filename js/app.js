@@ -5,7 +5,7 @@
 
   function buildHash() {
     const ui = state.ui;
-    const needsId = ui.route === "passport" || ui.route === "project";
+    const needsId = ui.route === "passport" || ui.route === "project" || ui.route === "tasks" || ui.route === "grades" || ui.route === "members";
     return "#/" + ui.site + "/" + ui.route + (needsId && ui.projectId ? "/" + ui.projectId : "");
   }
 
@@ -144,6 +144,7 @@
       tasks: draft.tasks.map(function (task) {
         return { id: window.Store.uid(), studentId: task.studentId, role: task.role, title: task.title, done: false, grade: "" };
       }),
+      published: false,
     });
     const project = projectById(draft.projectId);
     if (project) project.deadline = data.get("due") || draft.due;
@@ -169,7 +170,7 @@
       go({
         role: role,
         site: role === "student" ? "team" : state.ui.site,
-        route: role === "student" ? "project" : state.ui.route,
+        route: role === "student" ? "tasks" : state.ui.route,
         projectId: role === "student" && student ? student.projectId : state.ui.projectId,
       });
     } else if (action === "reset") {
@@ -220,6 +221,31 @@
       buildDraft(el.dataset.id, false);
     } else if (action === "copy-last") {
       buildDraft(el.dataset.id, true);
+    } else if (action === "fill-roles") {
+      const iteration = state.iterations.filter(function (item) { return item.id === el.dataset.id; })[0];
+      if (!iteration) return;
+      const people = state.students.filter(function (student) { return student.projectId === iteration.projectId; });
+      people.forEach(function (student) {
+        const lines = window.Store.TEMPLATES[student.role] || [];
+        lines.forEach(function (title) {
+          const exists = iteration.tasks.some(function (task) { return task.studentId === student.id && task.title === title; });
+          if (!exists) iteration.tasks.push({ id: window.Store.uid(), studentId: student.id, role: student.role, title: title, done: false, grade: "" });
+        });
+      });
+      window.Store.save(state);
+      showNotice("Задачи добавлены по компетентностным ролям");
+    } else if (action === "publish") {
+      const iteration = state.iterations.filter(function (item) { return item.id === el.dataset.id; })[0];
+      if (!iteration) return;
+      iteration.published = true;
+      window.Store.save(state);
+      showNotice("Итерация опубликована заказчику");
+    } else if (action === "remove-task") {
+      state.iterations.forEach(function (iteration) {
+        iteration.tasks = iteration.tasks.filter(function (task) { return task.id !== el.dataset.id; });
+      });
+      window.Store.save(state);
+      render();
     } else if (action === "cancel-draft") {
       state.ui.draft = null;
       window.Store.save(state);
@@ -278,7 +304,13 @@
       const student = state.students.filter(function (item) { return item.id === el.value; })[0];
       go({ studentId: el.value, projectId: student ? student.projectId : state.ui.projectId, site: "team", route: "project" });
     } else if (el.dataset.action === "switch-project") {
-      go({ projectId: el.value, site: "team", route: "project" });
+      go({ projectId: el.value, site: "team", route: state.ui.route === "home" ? "project" : state.ui.route });
+    } else if (el.dataset.action === "set-team-role" || el.dataset.action === "set-competency") {
+      const student = state.students.filter(function (item) { return item.id === el.dataset.id; })[0];
+      if (!student) return;
+      if (el.dataset.action === "set-team-role") student.teamRole = el.value;
+      else student.role = el.value;
+      window.Store.save(state);
     } else if (el.dataset.action === "grade") {
       state.iterations.forEach(function (iteration) {
         iteration.tasks.forEach(function (task) {
@@ -298,6 +330,10 @@
       const count = document.getElementById("application-count");
       if (box) box.innerHTML = window.Partner.cards(state);
       if (count) count.textContent = String(window.Partner.visible(state).length);
+    } else if (el.dataset.action === "set-group") {
+      const student = state.students.filter(function (item) { return item.id === el.dataset.id; })[0];
+      if (student) student.group = el.value;
+      window.Store.save(state);
     } else if (el.dataset.draftIndex != null && state.ui.draft) {
       state.ui.draft.tasks[Number(el.dataset.draftIndex)].title = el.value;
     }
@@ -337,9 +373,53 @@
       const data = new FormData(form);
       const name = String(data.get("name") || "").trim();
       if (!name) return;
-      state.students.push({ id: window.Store.uid(), name: name, projectId: state.ui.projectId, role: data.get("role") });
+      state.students.push({
+        id: window.Store.uid(),
+        name: name,
+        projectId: state.ui.projectId,
+        group: data.get("group") || "",
+        teamRole: data.get("teamRole") || "Участник",
+        role: data.get("role") || "Не выбрано",
+      });
       window.Store.save(state);
       showNotice(name + " добавлен в группу");
+    } else if (form.id === "new-iteration") {
+      event.preventDefault();
+      const data = new FormData(form);
+      const title = String(data.get("title") || "").trim();
+      if (!title) return;
+      state.iterations.push({
+        id: window.Store.uid(),
+        projectId: state.ui.projectId,
+        title: title,
+        due: data.get("due") || window.Store.isoPlus(7),
+        published: false,
+        tasks: [],
+      });
+      const project = projectById(state.ui.projectId);
+      if (project && data.get("due")) project.deadline = data.get("due");
+      window.Store.save(state);
+      showNotice("Итерация создана. Можно добавлять задачи");
+    } else if (form.id === "add-task") {
+      event.preventDefault();
+      const data = new FormData(form);
+      const iteration = state.iterations.filter(function (item) { return item.id === data.get("iterationId"); })[0];
+      const student = state.students.filter(function (item) { return item.id === data.get("studentId"); })[0];
+      const title = String(data.get("title") || "").trim();
+      if (!iteration || !title) {
+        showNotice("Сначала создайте итерацию и напишите задачу");
+        return;
+      }
+      iteration.tasks.push({
+        id: window.Store.uid(),
+        studentId: student ? student.id : "",
+        role: student ? student.role : "",
+        title: title,
+        done: false,
+        grade: "",
+      });
+      window.Store.save(state);
+      showNotice("Задача добавлена");
     } else if (form.id === "draft-form") {
       event.preventDefault();
       commitDraft();
@@ -366,9 +446,9 @@
     render();
   });
 
-  if (!location.hash) {
+  if (!location.hash || location.hash === "#") {
     ignoreHash = true;
-    location.hash = "#/partner/home";
+    location.hash = buildHash();
   } else {
     applyHash();
   }
