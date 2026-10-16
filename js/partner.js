@@ -231,7 +231,7 @@
         field("customer", "Заказчик", project.customer, readOnly) +
         field("program", "Образовательная программа", project.program, readOnly) +
         field("type", "Тип проекта", project.type, readOnly) +
-        field("complexity", "Уровень сложности", project.complexity, readOnly) +
+        field("complexity", "Описание", project.complexity, readOnly) +
         field("address", "Адрес практической подготовки", project.address, readOnly) +
         '<div class="inline">' +
           '<label class="field">Команд<input name="teams" type="number" min="1" value="' + esc(project.teams) + '"' + (readOnly ? " disabled" : "") + "></label>" +
