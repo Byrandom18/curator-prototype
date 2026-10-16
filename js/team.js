@@ -150,7 +150,7 @@
         tools + draftPanel(state) + blocks +
         '<section class="card about"><h2>О проекте «' + esc(current.title) + "»</h2><table>" +
           row("Краткое название", current.title) +
-          row("Уровень сложности", current.complexity) +
+          row("Описание", current.complexity) +
           row("Тип проводимых работ", current.type) +
           row("Цель", current.goal) +
           row("Требуемый результат", current.result) +
